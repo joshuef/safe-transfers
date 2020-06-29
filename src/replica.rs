@@ -156,7 +156,8 @@ impl Replica {
             Err(Error::from("Sending from and to the same account"))
         } else {
             match self.sign_validated_transfer(&signed_transfer) {
-                Err(_) => Err(Error::InvalidSignature),
+                Err(_) => Err(Error::from("bad sig at test_vlidate")),
+                // Err(_) => Err(Error::InvalidSignature),
                 Ok(replica_signature) => Ok(TransferValidated {
                     signed_transfer,
                     replica_signature,
@@ -171,7 +172,8 @@ impl Replica {
         let transfer = &signed_transfer.transfer;
         // Always verify signature first! (as to not leak any information).
         if !self.verify_actor_signature(&signed_transfer).is_ok() {
-            return Err(Error::InvalidSignature);
+            return Err(Error::from("bag sig at verify actor...."));
+            // return Err(Error::InvalidSignature);
         }
         if transfer.id.actor == transfer.to {
             return Err(Error::from("Sender and recipient are the same."));
@@ -207,7 +209,8 @@ impl Replica {
         }
 
         match self.sign_validated_transfer(&signed_transfer) {
-            Err(_) => Err(Error::InvalidSignature),
+            Err(_) => Err(Error::from("another bad sigin validate")),
+            // Err(_) => Err(Error::InvalidSignature),
             Ok(replica_signature) => Ok(TransferValidated {
                 signed_transfer,
                 replica_signature,
@@ -225,7 +228,8 @@ impl Replica {
         
         // Always verify signature first! (as to not leak any information).
         if !self.verify_registered_proof(debit_proof).is_ok() {
-            return Err(Error::InvalidSignature);
+            return Err(Error::from("at register the proof is invalid"));
+            // return Err(Error::InvalidSignature);
         }
 
         warn!("registering transfer sig okayyyy!!!");
@@ -383,7 +387,8 @@ impl Replica {
                 if actor_sig.is_ok() {
                     Ok(())
                 } else {
-                    Err(Error::InvalidSignature)
+                    Err(Error::from("actor sig is invalid for some reason"))
+                    // Err(Error::InvalidSignature)
                 }
             }
         }
@@ -412,7 +417,8 @@ impl Replica {
                 warn!("verifying registered proof....FAILED......");
 
                 // If it's not signed with our peers' public key, we won't consider it valid.
-                Err(Error::InvalidSignature)
+                Err(Error::from("verifying registered proof failedddd"))
+                // Err(Error::InvalidSignature)
             }
         }
     }
@@ -433,7 +439,8 @@ impl Replica {
                     }
                 }
                 // If we don't know the public key this was signed with, we won't consider it valid.
-                Err(Error::InvalidSignature)
+                Err(Error::from("Failed at propogated proof checl"))
+                // Err(Error::InvalidSignature)
             }
         }
     }

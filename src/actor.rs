@@ -257,7 +257,7 @@ impl<V: ReplicaValidator> Actor<V> {
                     Err(Error::from("Non-sequential opertaion")) // "Non-sequential operation"
                 }
             }
-            Err(_) => Err(Error::from("??????????????????? register at actor.....")), // from this place this code won't happen, but account validates the transfer is actually debits from it's owner.
+            Err(_) => Err(Error::from("??????????????????? register at actor.....tig")), // from this place this code won't happen, but account validates the transfer is actually debits from it's owner.
             // Err(_) => Err(Error::InvalidOperation), // from this place this code won't happen, but account validates the transfer is actually debits from it's owner.
         }
     }
