@@ -14,6 +14,7 @@ use safe_nd::{
 };
 use std::collections::{HashMap, HashSet};
 use threshold_crypto::{PublicKeySet, PublicKeyShare, SecretKeyShare};
+use log::{debug,warn};
 
 /// The Replica is the part of an AT2 system
 /// that forms validating groups, and signs
@@ -181,12 +182,18 @@ impl Replica {
         match self.pending_debits.get(&signed_transfer.from()) {
             None => {
                 if transfer.id.counter != 0 {
-                    return Err(Error::from("either already proposed or out of order msg"));
+                    return Err(Error::from("no prev debits, but counter is 0:: either already proposed or out of order msg"));
                 }
             }
             Some(value) => {
                 if transfer.id.counter != (value + 1) {
-                    return Err(Error::from("either already proposed or out of order msg"));
+                    debug!("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                    debug!("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                    debug!("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                    debug!("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                    debug!("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                    debug!("Pending debits at error point: {:?}", self.pending_debits );
+                    return Err(Error::from(format!("out of order msg, previous count: {:?}", value)));
                 }
             }
         }
@@ -211,10 +218,18 @@ impl Replica {
 
     /// Step 2. Validation of agreement, and order at debit source.
     pub fn register(&self, debit_proof: &DebitAgreementProof) -> Result<TransferRegistered> {
+        warn!("registering transfer!!!");
+        warn!("registering transfer!!!");
+        warn!("registering transfer!!!");
+        warn!("registering transfer!!!");
+        
         // Always verify signature first! (as to not leak any information).
         if !self.verify_registered_proof(debit_proof).is_ok() {
             return Err(Error::InvalidSignature);
         }
+
+        warn!("registering transfer sig okayyyy!!!");
+
         let transfer = &debit_proof.signed_transfer.transfer;
         let sender = self.accounts.get(&debit_proof.from());
         match sender {
@@ -229,7 +244,8 @@ impl Replica {
                         Err(Error::from("Non-sequential operation"))
                     }
                 }
-                Err(_) => Err(Error::InvalidOperation), // from this place this code won't happen, but history validates the transfer is actually debits from it's owner.
+                Err(_) => Err(Error::from("?????????????????????????????????? register at replica invalid op")), // from this place this code won't happen, but history validates the transfer is actually debits from it's owner.
+                // Err(_) => Err(Error::InvalidOperation), // from this place this code won't happen, but history validates the transfer is actually debits from it's owner.
             },
         }
     }
@@ -380,12 +396,21 @@ impl Replica {
         match bincode::serialize(&proof.signed_transfer) {
             Err(_) => Err(Error::NetworkOther("Could not serialise transfer".into())),
             Ok(data) => {
+
+                warn!("verifying registered proof.............");
+                warn!("verifying registered proof.............");
+                warn!("verifying registered proof.............");
+                warn!("verifying registered proof.............");
+                warn!("verifying registered proof.............");
                 // Check if proof is signed by our peers.
                 let public_key = safe_nd::PublicKey::Bls(self.peer_replicas.public_key());
                 let result = public_key.verify(&proof.debiting_replicas_sig, &data);
                 if result.is_ok() {
                     return result;
                 }
+
+                warn!("verifying registered proof....FAILED......");
+
                 // If it's not signed with our peers' public key, we won't consider it valid.
                 Err(Error::InvalidSignature)
             }

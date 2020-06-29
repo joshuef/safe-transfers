@@ -8,7 +8,7 @@
 
 use safe_nd::{AccountId, Error, Money, Result, Transfer, TransferId};
 use std::collections::HashSet;
-
+use log::warn;
 /// The balance and history of transfers for an account id.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Account {
@@ -53,10 +53,17 @@ impl Account {
     /// Zero based indexing, first debit will be nr 0
     /// (we could just as well just compare debits.len()..)
     pub fn is_sequential(&self, transfer: &Transfer) -> Result<bool> {
+        warn!("IN IS SEQQQQQQQQQQQQQQQQQQQ");
+        warn!("IN IS SEQQQQQQQQQQQQQQQQQQQ");
+        warn!("IN IS SEQQQQQQQQQQQQQQQQQQQ");
+        warn!("IN IS SEQQQQQQQQQQQQQQQQQQQ, {:?} {:?}", transfer.id.actor, self.id);
+
         let id = transfer.id;
         if id.actor != self.id {
-            Err(Error::from("Operation is non-sequential"))
+            Err(Error::from("Operrrrrrrrrrrrration is non-sequential"))
         } else {
+
+            println!("same actor.....and last debit wasssssssssssssss.......... {:?}", self.debits.last());
             match self.debits.last() {
                 None => Ok(id.counter == 0), // if no debits have been made, transfer counter must be 0
                 Some(previous) => Ok(previous.id.counter + 1 == id.counter),

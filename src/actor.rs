@@ -18,6 +18,7 @@ use safe_nd::{
 };
 use std::collections::{BTreeMap, HashSet};
 use threshold_crypto::PublicKeySet;
+use log::debug;
 
 /// A signature share, with its index in the combined collection.
 #[derive(Clone, Eq, PartialEq, Debug)]
@@ -173,21 +174,41 @@ impl<V: ReplicaValidator> Actor<V> {
             }
         }
 
+        println!("::::::RECEIVINGNGNNGNGNGGGGGG sig in actor");
+        println!("::::::RECEIVINGNGNNGNGNGGGGGG sig in actor");
+        println!("::::::RECEIVINGNGNNGNGNGGGGGG sig in actor");
         let mut proof = None;
         let accumulating_validations = &self.accumulating_validations;
+
+        println!(
+            "accumulating whatnow: {:?}",
+            self.accumulating_validations.len()
+        );
         let largest_group = accumulating_validations
             .clone()
             .into_iter()
             .max_by_key(|c| c.1.len());
         match largest_group {
-            None => (),
+            None => {
+                println!("no largest group found! :O:O:O:O:O");
+                ()
+            }
             Some((replicas, accumulated)) => {
                 // If received validation is made by same set of replicas as this group,
                 // and the current count of accumulated is same as the threshold,
                 // then we have reached the quorum needed to build the proof. (Quorum = threshold + 1)
                 let quorum =
-                    accumulated.len() == replicas.threshold() && replicas == validation.replicas;
+                    accumulated.len() >= replicas.threshold() && replicas == validation.replicas;
+
+                println!("quorum number wanted: {:?}", replicas.threshold());
+                println!("what we havbe: {:?}", accumulated.len());
+                println!("replicas match??? {:?}", replicas == validation.replicas);
                 if quorum {
+                    println!("quoooooooooooooooooooooooooooor");
+                    println!("quoooooooooooooooooooooooooooor");
+                    println!("quoooooooooooooooooooooooooooor");
+                    println!("quoooooooooooooooooooooooooooor");
+                    println!("quoooooooooooooooooooooooooooor");
                     // collect sig shares
                     let last_sig = validation.clone().replica_signature;
                     let sig_shares: BTreeMap<_, _> = accumulated
@@ -236,7 +257,8 @@ impl<V: ReplicaValidator> Actor<V> {
                     Err(Error::from("Non-sequential opertaion")) // "Non-sequential operation"
                 }
             }
-            Err(_) => Err(Error::InvalidOperation), // from this place this code won't happen, but account validates the transfer is actually debits from it's owner.
+            Err(_) => Err(Error::from("??????????????????? register at actor.....")), // from this place this code won't happen, but account validates the transfer is actually debits from it's owner.
+            // Err(_) => Err(Error::InvalidOperation), // from this place this code won't happen, but account validates the transfer is actually debits from it's owner.
         }
     }
 
@@ -271,12 +293,30 @@ impl<V: ReplicaValidator> Actor<V> {
                 _ => None,
             })
             .unique_by(|e| e.id())
-            .map(|e| ReceivedCredit {
+            .map(|e| {
+
+                println!("CREDITS CHECKING:::::: {:?}", e);
+                ReceivedCredit {
                 debit_proof: e.debit_proof.clone(),
                 debiting_replicas: e.debiting_replicas,
+            } 
+        })
+            .filter(|credit| 
+                {   
+                    #[cfg(feature="simulated-payouts")]
+                    {
+                        return true
+                    }
+                    self.verify_credit_proof(credit).is_ok()
+                })
+            .filter(|credit| {
+
+                println!("VALID ANDNNNNNnndddddd ids match? {:?}", self.id == credit.to() );
+
+
+                println!("CREDIT IDDDD: {:?}", &credit.id());
+                self.id == credit.to()
             })
-            .filter(|credit| self.verify_credit_proof(credit).is_ok())
-            .filter(|credit| self.id == credit.to())
             .filter(|credit| !self.account.contains(&credit.id()))
             .collect();
 
@@ -322,6 +362,7 @@ impl<V: ReplicaValidator> Actor<V> {
     /// There is no validation of an event, it is assumed to have
     /// been properly validated before raised, and thus anything that breaks is a bug.
     pub fn apply(&mut self, event: ActorEvent) {
+        debug!("Applying event {:?}", event);
         match event {
             ActorEvent::TransferInitiated(e) => {
                 self.next_debit_version = e.id().counter;
@@ -355,8 +396,10 @@ impl<V: ReplicaValidator> Actor<V> {
             ActorEvent::TransfersSynched(e) => {
                 for credit in e.credits {
                     // append credits _before_ debits
+
                     self.account
-                        .append(credit.debit_proof.signed_transfer.transfer);
+                    .append(credit.clone().debit_proof.signed_transfer.transfer);
+                    println!("Transfer receive synced:::: {:?}", credit);
                 }
                 let any_debits = e.debits.len() > 0;
                 for proof in e.debits {
@@ -368,8 +411,12 @@ impl<V: ReplicaValidator> Actor<V> {
                     self.next_debit_version = self.account.next_debit() - 1;
                 }
             }
+
+
         };
         // consider event log, to properly be able to reconstruct state from restart
+    
+        println!("DONE APPLYING");
     }
 
     /// -----------------------------------------------------------------
@@ -435,6 +482,8 @@ impl<V: ReplicaValidator> Actor<V> {
             Err(_) => Err(Error::NetworkOther("Could not serialise transfer".into())),
             Ok(data) => {
                 let public_key = safe_nd::PublicKey::Bls(self.replicas.public_key());
+
+                println!("..............................................about to verify");
                 public_key.verify(&proof.debiting_replicas_sig, &data)
             }
         }
